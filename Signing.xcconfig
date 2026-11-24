@@ -1,0 +1,14 @@
+// Ad-hoc signing by default, so the project builds on any Mac.
+//
+// With ad-hoc signing macOS treats every rebuild as a new app and forgets the system audio
+// permission. To keep it, create Local.xcconfig next to this file (it is ignored by git) with
+// your own certificate:
+//
+//     CODE_SIGN_IDENTITY = Apple Development
+//     DEVELOPMENT_TEAM = YOURTEAMID
+
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_IDENTITY = -
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"

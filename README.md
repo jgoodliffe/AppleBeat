@@ -22,13 +22,18 @@ open build/Build/Products/Release/AppleBeat.app
 
 The first time it runs, macOS asks for permission to capture system audio. If the logo doesn't react to music, allow AppleBeat under **System Settings → Privacy & Security → Screen & System Audio Recording → System Audio Recording Only**.
 
-The app is ad-hoc signed, so to macOS every rebuild is a new app and the old permission stops applying. If a rebuilt copy hears nothing and macOS doesn't ask again, clear the old entry and reopen the app:
+By default the app is ad-hoc signed, so to macOS every rebuild is a new app and the old permission stops applying. If a rebuilt copy hears nothing and macOS doesn't ask again, clear the old entry and reopen the app:
 
 ```sh
 tccutil reset AudioCapture local.applebeat.AppleBeat
 ```
 
-Signing with your own development certificate avoids this.
+To keep the permission across rebuilds, sign with your own development certificate. Create a file called `Local.xcconfig` next to `Signing.xcconfig` (git ignores it) containing:
+
+```
+CODE_SIGN_IDENTITY = Apple Development
+DEVELOPMENT_TEAM = YOURTEAMID
+```
 
 ## Using it
 
