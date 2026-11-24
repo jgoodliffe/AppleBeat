@@ -11,7 +11,13 @@ It listens to system audio, finds the beats, and flashes the logo on each one. W
 
 On a Mac without the logo light the app still runs, but only the menu bar icon beats.
 
-## Build and run
+## Install
+
+Download the latest `AppleBeat` zip from the [releases page](https://github.com/jgoodliffe/AppleBeat/releases/latest), unzip it, move AppleBeat to Applications and open it. The release is signed and notarised, and runs on Apple silicon.
+
+When macOS asks for permission to capture system audio, allow it.
+
+## Build from source
 
 Open `AppleBeat.xcodeproj` in Xcode and press Run, or build from the command line:
 
