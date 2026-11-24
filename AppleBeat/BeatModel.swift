@@ -97,11 +97,8 @@ final class BeatModel: ObservableObject {
     private func applyEnabled() {
         pushSettings()
         if enabled {
-            do {
-                try tap.start()
-                problem = nil
-            } catch {
-                problem = error.localizedDescription
+            tap.start { [weak self] error in
+                DispatchQueue.main.async { self?.problem = error?.localizedDescription }
             }
             if idleTimer == nil {
                 idleTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in

@@ -21,6 +21,7 @@ final class SystemAudioTap {
     var onSamples: ((UnsafeBufferPointer<Float>, Double) -> Void)?
 
     private let queue = DispatchQueue(label: "applebeat.audio", qos: .userInteractive)
+    private let control = DispatchQueue(label: "applebeat.audio.control")
     private var tapID = AudioObjectID(kAudioObjectUnknown)
     private var aggregateID = AudioObjectID(kAudioObjectUnknown)
     private var procID: AudioDeviceIOProcID?
@@ -34,31 +35,42 @@ final class SystemAudioTap {
         mScope: kAudioObjectPropertyScopeGlobal,
         mElement: kAudioObjectPropertyElementMain)
 
-    func start() throws {
-        guard !running else { return }
-        try build()
-        running = true
+    /// Starts listening. The first time, macOS asks the user for permission and this waits for
+    /// the answer, so the work is done off the main queue; `completion` may be called on any queue.
+    func start(completion: @escaping (Error?) -> Void) {
+        control.async {
+            guard !self.running else { return completion(nil) }
+            do {
+                try self.build()
+            } catch {
+                return completion(error)
+            }
+            self.running = true
 
-        // The aggregate device is clocked by the output device, so rebuild when that changes.
-        let listener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
-            guard let self, self.running else { return }
-            self.teardown()
-            try? self.build()
+            // The aggregate device is clocked by the output device, so rebuild when that changes.
+            let listener: AudioObjectPropertyListenerBlock = { _, _ in
+                guard self.running else { return }
+                self.teardown()
+                try? self.build()
+            }
+            self.deviceListener = listener
+            AudioObjectAddPropertyListenerBlock(
+                AudioObjectID(kAudioObjectSystemObject), &Self.defaultOutputAddress, self.control, listener)
+            completion(nil)
         }
-        deviceListener = listener
-        AudioObjectAddPropertyListenerBlock(
-            AudioObjectID(kAudioObjectSystemObject), &Self.defaultOutputAddress, .main, listener)
     }
 
     func stop() {
-        guard running else { return }
-        running = false
-        if let deviceListener {
-            AudioObjectRemovePropertyListenerBlock(
-                AudioObjectID(kAudioObjectSystemObject), &Self.defaultOutputAddress, .main, deviceListener)
+        control.async {
+            guard self.running else { return }
+            self.running = false
+            if let listener = self.deviceListener {
+                AudioObjectRemovePropertyListenerBlock(
+                    AudioObjectID(kAudioObjectSystemObject), &Self.defaultOutputAddress, self.control, listener)
+            }
+            self.deviceListener = nil
+            self.teardown()
         }
-        deviceListener = nil
-        teardown()
     }
 
     // MARK: - Private
